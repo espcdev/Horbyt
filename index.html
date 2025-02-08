@@ -209,6 +209,7 @@
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
             font-size: 0.95rem;
+            white-space: pre-wrap;
         }
 
         .message.assistant .message-content {
@@ -239,7 +240,7 @@
         .message-input {
             width: 100%;
             padding: 1rem;
-            padding-right: 3rem;
+            padding-right: 2.5rem;
             border: 1px solid var(--border-color);
             border-radius: 0.5rem;
             outline: none;
@@ -256,7 +257,7 @@
         .send-button {
             position: absolute;
             right: 0.5rem;
-            top: 50%;
+            top: 39%;
             transform: translateY(-50%);
             background: transparent;
             border: none;
@@ -302,12 +303,156 @@
                 display: block;
             }
         }
+
+        /* Nuevos estilos para código y razonamiento */
+        .code-section {
+            position: relative;
+            margin: 1rem 0;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: var(--sidebar-bg);
+            border: 1px solid var(--border-color);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .thinking-header {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #2563eb;
+            margin-bottom: 0.5rem;
+        }
+
+        .thinking-content {
+            display: none;
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.5rem;
+        }
+
+        .thinking-content.show {
+            display: block;
+        }
+        
+        /* Nuevos estilos para modo imagen */
+        .image-mode .messages {
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .image-controls {
+            display: none; !important;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .image-mode .image-controls {
+            display: flex;
+        }
+        
+        .dimension-input {
+            width: 100px;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            background: var(--message-bg);
+            color: var(--text-color);
+            font-size: 0.875rem;
+        }
+        
+        .generated-image {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            border: 1px solid var(--border-color);
+        }
+        
+        .back-to-chat {
+            display: none;
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .image-mode .back-to-chat {
+            display: flex;
+        }
+        
+        .sidebar-close {
+            display: none;
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar.show .sidebar-close {
+                display: block;
+            }
+            
+            .image-controls {
+                position: static;
+                transform: none;
+                justify-content: center;
+                margin-top: 0.5rem;
+            }
+            
+            .input-wrapper {
+                padding-bottom: 1rem;
+            }
+        }
+        
+        .image-instruction {
+            padding: 1rem;
+            background: var(--message-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            margin: 1rem auto;
+            max-width: 600px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <!-- Sidebar -->
         <div class="sidebar" id="sidebar">
+            <button class="sidebar-close" id="sidebarClose">
+                <i data-lucide="x"></i>
+            </button>
             <div class="sidebar-header">
                 <i data-lucide="bot" style="color: #2563eb;"></i>
                 <h1>Horbyt Chat</h1>
@@ -316,17 +461,23 @@
                 <i data-lucide="plus"></i>
                 <span>New Chat</span>
             </button>
-            <div class="chat-list" id="chatList">
-                <!-- Chat history will be populated here -->
-            </div>
+            <button class="new-chat-btn" id="imageGenBtn" style="margin-top: 0.5rem; background: #059669;">
+                <i data-lucide="image"></i>
+                <span>Image Gen</span>
+            </button>
+            <div class="chat-list" id="chatList"></div>
         </div>
 
         <!-- Main Chat Area -->
-        <div class="chat-container">
+        <div class="chat-container" id="mainChat">
             <header class="chat-header">
                 <div class="header-content">
                     <button class="menu-button" id="menuButton">
                         <i data-lucide="menu"></i>
+                    </button>
+                    <button class="back-to-chat" id="backToChat">
+                        <i data-lucide="arrow-left"></i>
+                        Volver al Chat
                     </button>
                     <div class="model-selector">
                         <div class="settings-dropdown">
@@ -340,7 +491,7 @@
                                 </div>
                             </div>
                         </div>
-                        <select>
+                        <select id="modelSelector">
                             <option value="llama3-70b-8192">Horbyt 2.3 Max</option>
                             <option value="mixtral-8x7b">Horbyt Flash</option>
                         </select>
@@ -348,9 +499,7 @@
                 </div>
             </header>
 
-            <div class="messages" id="messages">
-                <!-- Messages will be populated here -->
-            </div>
+            <div class="messages" id="messages"></div>
 
             <div class="input-container">
                 <div class="input-wrapper">
@@ -364,26 +513,29 @@
     </div>
 
     <script>
-        // Initialize Lucide icons
         lucide.createIcons();
 
-        // Chat functionality
         const messagesContainer = document.getElementById('messages');
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
         const menuButton = document.getElementById('menuButton');
         const sidebar = document.getElementById('sidebar');
+        const sidebarClose = document.getElementById('sidebarClose');
         const settingsButton = document.getElementById('settingsButton');
         const settingsContent = document.getElementById('settingsContent');
         const themeToggle = document.getElementById('themeToggle');
         const newChatBtn = document.getElementById('newChatBtn');
+        const imageGenBtn = document.getElementById('imageGenBtn');
+        const backToChat = document.getElementById('backToChat');
         const chatList = document.getElementById('chatList');
+        const modelSelector = document.getElementById('modelSelector');
         const apiKey = "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";
 
         let currentChatId = null;
         let chats = JSON.parse(localStorage.getItem('chats')) || [];
+        let isImageMode = false;
 
-        // Theme functionality
+        // Tema y configuración
         function toggleTheme() {
             document.documentElement.setAttribute('data-theme',
                 document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
@@ -391,11 +543,10 @@
             localStorage.setItem('theme', document.documentElement.getAttribute('data-theme'));
         }
 
-        // Initialize theme
         const savedTheme = localStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
 
-        // Chat management
+        // Gestión de chats
         function createNewChat() {
             const chatId = Date.now().toString();
             const chat = {
@@ -408,9 +559,7 @@
             currentChatId = chatId;
             updateChatList();
             clearMessages();
-            if (window.innerWidth <= 768) {
-                sidebar.classList.remove('show');
-            }
+            if (window.innerWidth <= 768) sidebar.classList.remove('show');
         }
 
         function updateChatList() {
@@ -422,7 +571,10 @@
                     <i data-lucide="message-square"></i>
                     <span>${chat.title}</span>
                 `;
-                chatItem.addEventListener('click', () => loadChat(chat.id));
+                chatItem.addEventListener('click', () => {
+                    loadChat(chat.id);
+                    if (isImageMode) switchToChatMode();
+                });
                 chatList.appendChild(chatItem);
             });
             lucide.createIcons();
@@ -433,15 +585,13 @@
             const chat = chats.find(c => c.id === chatId);
             clearMessages();
             chat.messages.forEach(msg => appendMessage(msg.role, msg.content));
-            if (window.innerWidth <= 768) {
-                sidebar.classList.remove('show');
-            }
+            if (window.innerWidth <= 768) sidebar.classList.remove('show');
         }
 
         function clearMessages() {
             messagesContainer.innerHTML = '';
         }
-
+        
         function saveMessage(role, content) {
             const chat = chats.find(c => c.id === currentChatId);
             if (chat) {
@@ -450,13 +600,89 @@
             }
         }
 
+        // Modo imagen
+        function switchToImageMode() {
+            isImageMode = true;
+            document.body.classList.add('image-mode');
+            modelSelector.innerHTML = '<option>Horbyt Image 2.0</option>';
+            // En la función switchToImageMode(), actualiza el contenido a:
+messagesContainer.innerHTML = `
+    <div class="message assistant">
+        <div class="avatar"><i data-lucide="bot" style="color: #FFFFF;"></i></div>
+        <div class="message-content image-instruction">
+            <strong>Escribe tu descripción en inglés para mejores resultados
+Las imágenes se generan en 1024x1024 px:</strong>
+    </div>`;
+            lucide.createIcons();
+        }
+
+        function switchToChatMode() {
+            isImageMode = false;
+            document.body.classList.remove('image-mode');
+            modelSelector.innerHTML = `
+                <option value="llama3-70b-8192">Horbyt 2.3 Max</option>
+                <option value="mixtral-8x7b">Horbyt Flash</option>`;
+            if (currentChatId) loadChat(currentChatId);
+            else createNewChat();
+        }
+
+        async function generateImage() {
+            const prompt = messageInput.value.trim();
+            if (!prompt) return;
+
+            const width = 1024; // Tamaño fijo
+const height = 1024; // Tamaño fijo
+            
+            const loadingMessage = showLoadingMessage();
+            
+            try {
+                const randomSeed = Math.floor(Math.random() * 1000000000);
+                const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?nologo=1&seed=${randomSeed}&size=1024x1024`;
+                
+                const img = new Image();
+                img.className = 'generated-image';
+                
+                img.onload = () => {
+                    loadingMessage.remove();
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'message assistant';
+                    messageDiv.innerHTML = `
+                        <div class="avatar"><i data-lucide="bot"></i></div>
+                        <div class="message-content">
+                            <img src="${imageUrl}" class="generated-image">
+                            </div>
+                        </div>`;
+                    messagesContainer.appendChild(messageDiv);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    lucide.createIcons();
+                };
+                
+                img.onerror = () => {
+                    loadingMessage.remove();
+                    appendMessage('assistant', '❌ Error generando la imagen. Intenta nuevamente.');
+                };
+                
+                img.src = imageUrl;
+                messageInput.value = '';
+
+            } catch (error) {
+                console.error('Error:', error);
+                loadingMessage.remove();
+                appendMessage('assistant', '❌ Error generando la imagen. Intenta nuevamente.');
+            }
+        }
+
+        // Función para enviar mensajes
         async function sendMessage() {
+            if (isImageMode) {
+                generateImage();
+                return;
+            }
+
             const message = messageInput.value.trim();
             if (!message) return;
 
-            if (!currentChatId) {
-                createNewChat();
-            }
+            if (!currentChatId) createNewChat();
 
             appendMessage('user', message);
             saveMessage('user', message);
@@ -488,10 +714,22 @@
             } catch (error) {
                 console.error('Error:', error);
                 loadingMessage.remove();
-                const errorMessage = 'Lo siento, ha ocurrido un error. Por favor, intenta de nuevo.';
-                appendMessage('assistant', errorMessage);
-                saveMessage('assistant', errorMessage);
+                appendMessage('assistant', '❌ Lo siento, ha ocurrido un error. Por favor, intenta de nuevo.');
             }
+        }
+
+        // Funciones auxiliares
+        function showLoadingMessage() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message assistant';
+            loadingDiv.innerHTML = `
+                <div class="avatar"><i data-lucide="bot"></i></div>
+                <div class="message-content">
+                    <i data-lucide="loader-2" class="loading"></i>
+                </div>`;
+            messagesContainer.appendChild(loadingDiv);
+            lucide.createIcons();
+            return loadingDiv;
         }
 
         function appendMessage(role, content) {
@@ -504,7 +742,82 @@
 
             const messageContent = document.createElement('div');
             messageContent.className = 'message-content';
-            messageContent.textContent = content;
+
+            // Procesar contenido
+            let processedContent = content;
+            let thinkingContent = '';
+            let codeBlocks = [];
+
+            // Extraer contenido de <think>
+            if (role === 'assistant') {
+                const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>/);
+                if (thinkMatch) {
+                    thinkingContent = thinkMatch[1].trim();
+                    processedContent = content.replace(/<think>[\s\S]*?<\/think>/, '').trim();
+                }
+            }
+
+            // Procesar código y texto
+            const parts = processedContent.split(/(```[\s\S]*?```)/g);
+            parts.forEach(part => {
+                if (part.startsWith('```') && part.endsWith('```')) {
+                    const codeContent = part.slice(3, -3).trim();
+                    const codeSection = document.createElement('div');
+                    codeSection.className = 'code-section';
+                    
+                    const pre = document.createElement('pre');
+                    pre.textContent = codeContent;
+                    
+                    const copyButton = document.createElement('button');
+                    copyButton.className = 'copy-btn';
+                    copyButton.innerHTML = `<i data-lucide="copy"></i>`;
+                    
+                    copyButton.addEventListener('click', () => {
+                        navigator.clipboard.writeText(codeContent);
+                        const icon = copyButton.querySelector('i');
+                        icon.setAttribute('data-lucide', 'check');
+                        lucide.createIcons();
+                        setTimeout(() => {
+                            icon.setAttribute('data-lucide', 'copy');
+                            lucide.createIcons();
+                        }, 1000);
+                    });
+
+                    codeSection.appendChild(pre);
+                    codeSection.appendChild(copyButton);
+                    messageContent.appendChild(codeSection);
+                } else if (part.trim()) {
+                    const textNode = document.createTextNode(part);
+                    messageContent.appendChild(textNode);
+                }
+            });
+
+            // Añadir sección de razonamiento
+            if (thinkingContent) {
+                const thinkingSection = document.createElement('div');
+                
+                const header = document.createElement('div');
+                header.className = 'thinking-header';
+                header.innerHTML = `
+                    <span>Razonamiento ▼</span>
+                `;
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'thinking-content';
+                contentDiv.textContent = thinkingContent;
+
+                header.addEventListener('click', () => {
+                    contentDiv.classList.toggle('show');
+                    header.querySelector('span').innerHTML = 
+                        contentDiv.classList.contains('show') 
+                        ? 'Razonamiento ▲' 
+                        : 'Razonamiento ▼';
+                });
+
+                thinkingSection.appendChild(header);
+                thinkingSection.appendChild(contentDiv);
+                messageContent.prepend(thinkingSection);
+            }
 
             if (role === 'user') {
                 messageDiv.appendChild(messageContent);
@@ -541,30 +854,19 @@
             return loadingDiv;
         }
 
-        // Event listeners
+        // Event Listeners
         sendButton.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
-        messageInput.addEventListener('input', () => {
-            sendButton.disabled = !messageInput.value.trim();
-        });
-
-        menuButton.addEventListener('click', () => {
-            sidebar.classList.toggle('show');
-        });
-
+        messageInput.addEventListener('keypress', (e) => e.key === 'Enter' && sendMessage());
+        menuButton.addEventListener('click', () => sidebar.classList.toggle('show'));
+        sidebarClose.addEventListener('click', () => sidebar.classList.remove('show'));
         settingsButton.addEventListener('click', (e) => {
             e.stopPropagation();
             settingsContent.classList.toggle('show');
         });
-
         themeToggle.addEventListener('click', toggleTheme);
-
         newChatBtn.addEventListener('click', createNewChat);
+        imageGenBtn.addEventListener('click', switchToImageMode);
+        backToChat.addEventListener('click', switchToChatMode);
 
         document.addEventListener('click', (e) => {
             if (!settingsContent.contains(e.target) && !settingsButton.contains(e.target)) {
@@ -572,10 +874,9 @@
             }
         });
 
-        // Initialize first chat if none exists
-        if (chats.length === 0) {
-            createNewChat();
-        } else {
+        // Inicialización
+        if (chats.length === 0) createNewChat();
+        else {
             currentChatId = chats[0].id;
             updateChatList();
             loadChat(currentChatId);
